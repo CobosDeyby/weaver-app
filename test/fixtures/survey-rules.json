@@ -1,0 +1,373 @@
+{
+    "rules": [
+        {
+            "name": "sin regla siempre pasa",
+            "rule": null,
+            "answers": {},
+            "expected": true
+        },
+        {
+            "name": "grupo all vacío pasa",
+            "rule": { "all": [] },
+            "answers": {},
+            "expected": true
+        },
+        {
+            "name": "grupo any vacío pasa",
+            "rule": { "any": [] },
+            "answers": {},
+            "expected": true
+        },
+        {
+            "name": "eq texto",
+            "rule": { "q": "a", "op": "eq", "value": "si" },
+            "answers": { "a": "si" },
+            "expected": true
+        },
+        {
+            "name": "eq texto distinto",
+            "rule": { "q": "a", "op": "eq", "value": "si" },
+            "answers": { "a": "no" },
+            "expected": false
+        },
+        {
+            "name": "eq distingue mayúsculas",
+            "rule": { "q": "a", "op": "eq", "value": "si" },
+            "answers": { "a": "Si" },
+            "expected": false
+        },
+        {
+            "name": "eq sin respuesta",
+            "rule": { "q": "a", "op": "eq", "value": "si" },
+            "answers": {},
+            "expected": false
+        },
+        {
+            "name": "eq número contra texto numérico",
+            "rule": { "q": "a", "op": "eq", "value": "2" },
+            "answers": { "a": 2 },
+            "expected": true
+        },
+        {
+            "name": "eq decimal equivalente",
+            "rule": { "q": "a", "op": "eq", "value": 2 },
+            "answers": { "a": "2.0" },
+            "expected": true
+        },
+        {
+            "name": "eq contra lista es falso",
+            "rule": { "q": "a", "op": "eq", "value": "x" },
+            "answers": { "a": ["x"] },
+            "expected": false
+        },
+        {
+            "name": "neq con respuesta distinta",
+            "rule": { "q": "a", "op": "neq", "value": "si" },
+            "answers": { "a": "no" },
+            "expected": true
+        },
+        {
+            "name": "neq sin respuesta es verdadero",
+            "rule": { "q": "a", "op": "neq", "value": "si" },
+            "answers": {},
+            "expected": true
+        },
+        {
+            "name": "neq igual",
+            "rule": { "q": "a", "op": "neq", "value": "si" },
+            "answers": { "a": "si" },
+            "expected": false
+        },
+        {
+            "name": "gt numérico",
+            "rule": { "q": "n", "op": "gt", "value": 5 },
+            "answers": { "n": 6 },
+            "expected": true
+        },
+        {
+            "name": "gt igual es falso",
+            "rule": { "q": "n", "op": "gt", "value": 5 },
+            "answers": { "n": 5 },
+            "expected": false
+        },
+        {
+            "name": "gt compara números, no texto",
+            "rule": { "q": "n", "op": "gt", "value": 9 },
+            "answers": { "n": "10" },
+            "expected": true
+        },
+        {
+            "name": "gte igual",
+            "rule": { "q": "n", "op": "gte", "value": 5 },
+            "answers": { "n": 5 },
+            "expected": true
+        },
+        {
+            "name": "lt numérico",
+            "rule": { "q": "n", "op": "lt", "value": 5 },
+            "answers": { "n": 4.5 },
+            "expected": true
+        },
+        {
+            "name": "lte mayor es falso",
+            "rule": { "q": "n", "op": "lte", "value": 2 },
+            "answers": { "n": 3 },
+            "expected": false
+        },
+        {
+            "name": "lte sin respuesta es falso",
+            "rule": { "q": "n", "op": "lte", "value": 2 },
+            "answers": {},
+            "expected": false
+        },
+        {
+            "name": "gte con cero",
+            "rule": { "q": "n", "op": "gte", "value": 0 },
+            "answers": { "n": 0 },
+            "expected": true
+        },
+        {
+            "name": "gt con fechas ISO",
+            "rule": { "q": "d", "op": "gt", "value": "2026-01-31" },
+            "answers": { "d": "2026-02-01" },
+            "expected": true
+        },
+        {
+            "name": "lt con fechas ISO",
+            "rule": { "q": "d", "op": "lt", "value": "2026-01-31" },
+            "answers": { "d": "2026-02-01" },
+            "expected": false
+        },
+        {
+            "name": "gt texto contra número es falso",
+            "rule": { "q": "d", "op": "gt", "value": 5 },
+            "answers": { "d": "abc" },
+            "expected": false
+        },
+        {
+            "name": "empty sin respuesta",
+            "rule": { "q": "a", "op": "empty" },
+            "answers": {},
+            "expected": true
+        },
+        {
+            "name": "empty con null",
+            "rule": { "q": "a", "op": "empty" },
+            "answers": { "a": null },
+            "expected": true
+        },
+        {
+            "name": "empty con texto vacío",
+            "rule": { "q": "a", "op": "empty" },
+            "answers": { "a": "" },
+            "expected": true
+        },
+        {
+            "name": "empty con lista vacía",
+            "rule": { "q": "a", "op": "empty" },
+            "answers": { "a": [] },
+            "expected": true
+        },
+        {
+            "name": "empty con cero es falso",
+            "rule": { "q": "a", "op": "empty" },
+            "answers": { "a": 0 },
+            "expected": false
+        },
+        {
+            "name": "not_empty con respuesta",
+            "rule": { "q": "a", "op": "not_empty" },
+            "answers": { "a": "x" },
+            "expected": true
+        },
+        {
+            "name": "not_empty sin respuesta",
+            "rule": { "q": "a", "op": "not_empty" },
+            "answers": {},
+            "expected": false
+        },
+        {
+            "name": "in encuentra el valor",
+            "rule": { "q": "a", "op": "in", "value": ["1", "2"] },
+            "answers": { "a": 2 },
+            "expected": true
+        },
+        {
+            "name": "in no lo encuentra",
+            "rule": { "q": "a", "op": "in", "value": ["1", "2"] },
+            "answers": { "a": "3" },
+            "expected": false
+        },
+        {
+            "name": "in sin respuesta",
+            "rule": { "q": "a", "op": "in", "value": ["1", "2"] },
+            "answers": {},
+            "expected": false
+        },
+        {
+            "name": "not_in fuera de la lista",
+            "rule": { "q": "a", "op": "not_in", "value": ["1", "2"] },
+            "answers": { "a": "3" },
+            "expected": true
+        },
+        {
+            "name": "not_in sin respuesta es verdadero",
+            "rule": { "q": "a", "op": "not_in", "value": ["1", "2"] },
+            "answers": {},
+            "expected": true
+        },
+        {
+            "name": "contains en selección múltiple",
+            "rule": { "q": "m", "op": "contains", "value": "agua" },
+            "answers": { "m": ["luz", "agua"] },
+            "expected": true
+        },
+        {
+            "name": "contains sin el valor",
+            "rule": { "q": "m", "op": "contains", "value": "gas" },
+            "answers": { "m": ["luz", "agua"] },
+            "expected": false
+        },
+        {
+            "name": "contains sobre texto es falso",
+            "rule": { "q": "m", "op": "contains", "value": "a" },
+            "answers": { "m": "agua" },
+            "expected": false
+        },
+        {
+            "name": "operador desconocido es falso",
+            "rule": { "q": "a", "op": "like", "value": "x" },
+            "answers": { "a": "x" },
+            "expected": false
+        },
+        {
+            "name": "all exige todas",
+            "rule": {
+                "all": [
+                    { "q": "a", "op": "eq", "value": "si" },
+                    { "q": "n", "op": "gte", "value": 18 }
+                ]
+            },
+            "answers": { "a": "si", "n": 17 },
+            "expected": false
+        },
+        {
+            "name": "all con todas cumplidas",
+            "rule": {
+                "all": [
+                    { "q": "a", "op": "eq", "value": "si" },
+                    { "q": "n", "op": "gte", "value": 18 }
+                ]
+            },
+            "answers": { "a": "si", "n": 18 },
+            "expected": true
+        },
+        {
+            "name": "any basta con una",
+            "rule": {
+                "any": [
+                    { "q": "a", "op": "eq", "value": "si" },
+                    { "q": "n", "op": "gte", "value": 18 }
+                ]
+            },
+            "answers": { "a": "no", "n": 30 },
+            "expected": true
+        },
+        {
+            "name": "any sin ninguna",
+            "rule": {
+                "any": [
+                    { "q": "a", "op": "eq", "value": "si" },
+                    { "q": "n", "op": "gte", "value": 18 }
+                ]
+            },
+            "answers": { "a": "no", "n": 3 },
+            "expected": false
+        },
+        {
+            "name": "grupos anidados: all con any dentro",
+            "rule": {
+                "all": [
+                    { "q": "a", "op": "eq", "value": "si" },
+                    {
+                        "any": [
+                            { "q": "e", "op": "lte", "value": 2 },
+                            { "q": "s", "op": "not_empty" }
+                        ]
+                    }
+                ]
+            },
+            "answers": { "a": "si", "e": 4, "s": "familias" },
+            "expected": true
+        },
+        {
+            "name": "grupos anidados: falla el any interno",
+            "rule": {
+                "all": [
+                    { "q": "a", "op": "eq", "value": "si" },
+                    {
+                        "any": [
+                            { "q": "e", "op": "lte", "value": 2 },
+                            { "q": "s", "op": "not_empty" }
+                        ]
+                    }
+                ]
+            },
+            "answers": { "a": "si", "e": 4 },
+            "expected": false
+        }
+    ],
+    "visibility": [
+        {
+            "name": "sin reglas todo es visible",
+            "questions": [{ "key": "a" }, { "key": "b" }],
+            "answers": {},
+            "visible": ["a", "b"]
+        },
+        {
+            "name": "una pregunta depende de otra",
+            "questions": [
+                { "key": "tiene", "type": "single_choice" },
+                {
+                    "key": "cuantos",
+                    "visibleIf": { "q": "tiene", "op": "eq", "value": "si" }
+                }
+            ],
+            "answers": { "tiene": "no", "cuantos": 3 },
+            "visible": ["tiene"]
+        },
+        {
+            "name": "la respuesta de una pregunta oculta no cuenta para las siguientes",
+            "questions": [
+                { "key": "tiene" },
+                {
+                    "key": "cuantos",
+                    "visibleIf": { "q": "tiene", "op": "eq", "value": "si" }
+                },
+                {
+                    "key": "edades",
+                    "visibleIf": { "q": "cuantos", "op": "gt", "value": 0 }
+                },
+                { "key": "final" }
+            ],
+            "answers": { "tiene": "no", "cuantos": 3 },
+            "visible": ["tiene", "final"]
+        },
+        {
+            "name": "cadena de preguntas visibles",
+            "questions": [
+                { "key": "tiene" },
+                {
+                    "key": "cuantos",
+                    "visibleIf": { "q": "tiene", "op": "eq", "value": "si" }
+                },
+                {
+                    "key": "edades",
+                    "visibleIf": { "q": "cuantos", "op": "gt", "value": 0 }
+                }
+            ],
+            "answers": { "tiene": "si", "cuantos": 2 },
+            "visible": ["tiene", "cuantos", "edades"]
+        }
+    ]
+}
