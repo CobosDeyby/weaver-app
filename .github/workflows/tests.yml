@@ -28,6 +28,7 @@ jobs:
       - name: Generated code is up to date
         run: |
           dart run build_runner build
+          dart format lib/data/database.g.dart
           git diff --exit-code -- lib/data/database.g.dart
 
       - name: Format, analyze and test
