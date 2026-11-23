@@ -86,3 +86,40 @@ void clearDependents(SurveyDefinition definition, Answers answers, String change
     }
   }
 }
+
+/// The answers worth carrying to the next survey taken in a row: the visible
+/// ones the survey marked to be remembered.
+Answers rememberedAnswers(SurveyDefinition definition, Answers answers) {
+  final visible = definition.visible(answers);
+
+  return {
+    for (final question in definition.questions)
+      if (question.remember && visible.contains(question.key) && !isEmptyAnswer(answers[question.key]))
+        question.key: answers[question.key],
+  };
+}
+
+/// Drops prefilled answers that no longer fit: a value the list does not offer
+/// (the list changed, or its parent was not remembered). Questions are checked
+/// in order, so a dropped parent takes its dependents with it.
+Answers usableAnswers(SurveyDefinition definition, CatalogOptions catalogs, Answers answers) {
+  final usable = <String, dynamic>{};
+
+  for (final question in definition.questions) {
+    final value = answers[question.key];
+    if (isEmptyAnswer(value)) {
+      continue;
+    }
+
+    if (question.type == 'single_choice') {
+      final offered = optionsFor(question, catalogs, usable).any((option) => option.value == value);
+      if (!offered) {
+        continue;
+      }
+    }
+
+    usable[question.key] = value;
+  }
+
+  return usable;
+}

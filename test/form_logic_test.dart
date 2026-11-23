@@ -59,4 +59,73 @@ void main() {
 
     expect(answers, {'depto': 'ant', 'tiene_ninos': 'no'});
   });
+
+  group('answers carried to the next survey', () {
+    test('only visible answers the survey asked to remember are repeated', () {
+      final answers = {
+        'tiene_ninos': 'si',
+        'num_ninos': 2,
+        'depto': 'ant',
+        'muni': 'med',
+        'correo': 'a@b.co',
+      };
+
+      expect(rememberedAnswers(definition, answers), {'depto': 'ant', 'muni': 'med'});
+      expect(rememberedAnswers(definition, {'depto': ''}), isEmpty);
+      expect(rememberedAnswers(definition, {}), isEmpty);
+    });
+
+    test('a repeated answer the list no longer offers is dropped, with what depends on it', () {
+      expect(usableAnswers(definition, catalogs, {'depto': 'ant', 'muni': 'med'}), {
+        'depto': 'ant',
+        'muni': 'med',
+      });
+      expect(usableAnswers(definition, catalogs, {'depto': 'ant', 'muni': 'bog'}), {'depto': 'ant'});
+      expect(usableAnswers(definition, catalogs, {'depto': 'zzz', 'muni': 'med'}), isEmpty);
+      expect(usableAnswers(definition, catalogs, {'muni': 'med'}), isEmpty);
+    });
+  });
+
+  group('signature', () {
+    final withRequiredSignature = SurveyDefinition({
+      'sections': [
+        {
+          'questions': [
+            {'key': 'autoriza', 'type': 'single_choice', 'label': '¿Autoriza?', 'options': <Object>[]},
+            {
+              'key': 'firma',
+              'type': 'signature',
+              'label': 'Firma',
+              'required': true,
+              'visibleIf': {'q': 'autoriza', 'op': 'eq', 'value': 'si'},
+            },
+          ],
+        },
+      ],
+    });
+    final signed = {
+      'w': 300,
+      'h': 160,
+      'strokes': [
+        [
+          [10, 20],
+          [30, 40],
+        ],
+      ],
+    };
+
+    test('is required only when it is visible', () {
+      expect(validate(withRequiredSignature, {'autoriza': 'no'}), isEmpty);
+      expect(validate(withRequiredSignature, {'autoriza': 'si'}).keys, ['firma']);
+      expect(validate(withRequiredSignature, {'autoriza': 'si', 'firma': signed}), isEmpty);
+    });
+
+    test('is stored as the strokes the surveyor drew', () {
+      expect(answersToStore(withRequiredSignature, {'autoriza': 'si', 'firma': signed}), {
+        'autoriza': 'si',
+        'firma': signed,
+      });
+      expect(answersToStore(withRequiredSignature, {'autoriza': 'no', 'firma': signed}), {'autoriza': 'no'});
+    });
+  });
 }

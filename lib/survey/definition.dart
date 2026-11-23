@@ -25,6 +25,9 @@ class Question {
   String get label => raw['label'] as String? ?? '';
   String? get help => raw['help'] as String?;
   bool get required => raw['required'] == true;
+
+  /// Prefill the next survey taken in a row with this answer.
+  bool get remember => raw['remember'] == true;
   num? get min => (raw['validation'] as Map?)?['min'] as num?;
   num? get max => (raw['validation'] as Map?)?['max'] as num?;
 
