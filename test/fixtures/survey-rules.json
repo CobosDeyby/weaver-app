@@ -175,6 +175,40 @@
             "expected": false
         },
         {
+            "name": "empty con una firma dibujada es falso",
+            "rule": { "q": "a", "op": "empty" },
+            "answers": {
+                "a": {
+                    "w": 600,
+                    "h": 200,
+                    "strokes": [
+                        [
+                            [10, 20],
+                            [30, 40]
+                        ]
+                    ]
+                }
+            },
+            "expected": false
+        },
+        {
+            "name": "not_empty con una firma dibujada",
+            "rule": { "q": "a", "op": "not_empty" },
+            "answers": {
+                "a": {
+                    "w": 600,
+                    "h": 200,
+                    "strokes": [
+                        [
+                            [10, 20],
+                            [30, 40]
+                        ]
+                    ]
+                }
+            },
+            "expected": true
+        },
+        {
             "name": "not_empty con respuesta",
             "rule": { "q": "a", "op": "not_empty" },
             "answers": { "a": "x" },

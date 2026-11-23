@@ -14,13 +14,19 @@ import '../survey/definition.dart';
 import '../survey/form_logic.dart';
 import '../survey/rules.dart';
 import '../sync/sync_controller.dart';
+import 'saved_screen.dart';
+import 'signature_field.dart';
 
 /// Fill one survey. The response is written to the phone first; sending it
 /// is the sync's job, so saving never depends on the network.
 class SurveyFormScreen extends ConsumerStatefulWidget {
-  const SurveyFormScreen({super.key, required this.survey});
+  const SurveyFormScreen({super.key, required this.survey, this.carriedOver = const {}});
 
   final Survey survey;
+
+  /// Answers repeated from the previous survey of the series (the ones the
+  /// survey marked to remember). The surveyor can change any of them.
+  final Answers carriedOver;
 
   @override
   ConsumerState<SurveyFormScreen> createState() => _SurveyFormScreenState();
@@ -30,6 +36,7 @@ class _SurveyFormScreenState extends ConsumerState<SurveyFormScreen> {
   late final SurveyDefinition _definition = SurveyDefinition.fromJson(widget.survey.definition);
   final DateTime _startedAt = DateTime.now();
   final Answers _answers = {};
+  int _carried = 0;
   final _fieldKeys = <String, GlobalKey>{};
 
   CatalogOptions _catalogs = const {};
@@ -59,6 +66,8 @@ class _SurveyFormScreenState extends ConsumerState<SurveyFormScreen> {
     if (mounted) {
       setState(() {
         _catalogs = catalogs;
+        _answers.addAll(usableAnswers(_definition, catalogs, widget.carriedOver));
+        _carried = _answers.length;
         _loading = false;
       });
     }
@@ -142,9 +151,15 @@ class _SurveyFormScreenState extends ConsumerState<SurveyFormScreen> {
     unawaited(ref.read(syncProvider.notifier).sync());
 
     if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Respuesta guardada en el teléfono.')));
-      Navigator.pop(context);
+      // Do not send the surveyor back to the list: in the field the next
+      // survey is usually the same one, at the next door.
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              SavedScreen(survey: widget.survey, carriedOver: rememberedAnswers(_definition, _answers)),
+        ),
+      );
     }
   }
 
@@ -186,6 +201,20 @@ class _SurveyFormScreenState extends ConsumerState<SurveyFormScreen> {
             : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
+                  if (_carried > 0)
+                    Card(
+                      key: const Key('carried-banner'),
+                      color: theme.colorScheme.secondaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          _carried == 1
+                              ? 'Se repitió 1 respuesta de la encuesta anterior. Cámbiala si no aplica.'
+                              : 'Se repitieron $_carried respuestas de la encuesta anterior. Cámbialas si no aplican.',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
                   for (final section in _definition.sections)
                     if (section.questions.any((question) => visible.contains(question.key))) ...[
                       Padding(
@@ -315,7 +344,8 @@ class _QuestionField extends StatelessWidget {
   }
 
   /// Text fields show the error inside their decoration; the rest below.
-  bool get _showsOwnError => question.isChoice || question.type == 'date' || question.type == 'time';
+  bool get _showsOwnError =>
+      question.isChoice || question.type == 'date' || question.type == 'time' || question.type == 'signature';
 
   Widget _input(BuildContext context) {
     switch (question.type) {
@@ -327,6 +357,13 @@ class _QuestionField extends StatelessWidget {
         return _dateButton(context);
       case 'time':
         return _timeButton(context);
+      case 'signature':
+        return SignatureField(
+          key: Key('field-${question.key}'),
+          value: value,
+          error: error,
+          onChanged: onChanged,
+        );
       default:
         return _textField();
     }

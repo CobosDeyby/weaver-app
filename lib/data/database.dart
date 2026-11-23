@@ -81,6 +81,16 @@ class AppDatabase extends _$AppDatabase {
     return query.map((row) => row.read(count) ?? 0).watchSingle();
   }
 
+  /// Responses this person finished since [since], whatever their status.
+  Stream<int> watchCountSince(int userId, DateTime since) {
+    final count = responses.id.count();
+    final query = selectOnly(responses)
+      ..addColumns([count])
+      ..where(responses.userId.equals(userId) & responses.finishedAt.isBiggerOrEqualValue(since));
+
+    return query.map((row) => row.read(count) ?? 0).watchSingle();
+  }
+
   Stream<List<Response>> watchResponses(int userId) =>
       (select(responses)
             ..where((response) => response.userId.equals(userId))
