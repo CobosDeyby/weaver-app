@@ -19,6 +19,10 @@ void main() {
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
     api = FakeApi()..addSurvey(1, 'h1');
+    // The server knows the same lists, so the sync that follows a save keeps them.
+    api
+      ..addCatalog(1, 'c1', const [])
+      ..addCatalog(2, 'c2', const [], parentId: 1);
 
     await db.replaceCatalog(CatalogsCompanion.insert(id: const Value(1), name: 'Departamentos', hash: 'c1'), [
       CatalogItemsCompanion.insert(catalogId: 1, value: 'ant', label: 'Antioquia', position: 0),
@@ -46,6 +50,12 @@ void main() {
   });
 
   tearDown(() => db.close());
+
+  /// Streams on screen (the saved screen counts) keep a timer until their widget is gone.
+  Future<void> leave(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(Duration.zero);
+  }
 
   Future<void> openForm(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 4000);
@@ -156,6 +166,7 @@ void main() {
     expect(api.received.single['id'], stored.id);
     expect(stored.status, anyOf('pending', 'synced'));
     expect((await db.select(db.responses).getSingle()).status, 'synced');
+    await leave(tester);
   });
 
   testWidgets('a signature is drawn, can be cleared, and is stored with the response', (tester) async {
@@ -192,6 +203,7 @@ void main() {
         expect((point as List).every((n) => n is int && n >= 0 && n <= 1000), isTrue);
       }
     }
+    await leave(tester);
   });
 
   testWidgets('after saving, the next survey starts right away with the remembered answers', (tester) async {
@@ -217,6 +229,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('new-survey')));
     await tester.pumpAndSettle();
+    // The lists load from SQLite, which answers outside the fake clock.
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await tester.pumpAndSettle();
 
     expect(find.byType(SurveyFormScreen), findsOneWidget);
     expect(find.textContaining('Se repitieron 2 respuestas'), findsOneWidget);
@@ -234,5 +249,6 @@ void main() {
     expect(all, hasLength(2));
     expect(find.text('Llevas 2 hoy · todo enviado'), findsOneWidget);
     expect(all.map((response) => jsonDecode(response.answers)['muni']), everyElement('med'));
+    await leave(tester);
   });
 }
