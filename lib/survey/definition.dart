@@ -28,6 +28,21 @@ class Question {
 
   /// Prefill the next survey taken in a row with this answer.
   bool get remember => raw['remember'] == true;
+
+  /// How a choice shows its options: 'list' (all of them, open), 'select' (a
+  /// searchable sheet) or null, which lets the app decide by how many there are.
+  String? get display => raw['display'] as String?;
+
+  /// With no explicit choice, up to this many options are shown open.
+  static const autoListLimit = 6;
+
+  /// Whether a choice with [optionCount] options opens a sheet instead of showing them all.
+  /// A list that depends on another question (municipalities) always does.
+  bool usesSelect(int optionCount) => switch (display) {
+    'select' => true,
+    'list' => false,
+    _ => filterBy != null || optionCount > autoListLimit,
+  };
   num? get min => (raw['validation'] as Map?)?['min'] as num?;
   num? get max => (raw['validation'] as Map?)?['max'] as num?;
 

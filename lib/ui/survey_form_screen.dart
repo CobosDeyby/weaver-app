@@ -350,9 +350,9 @@ class _QuestionField extends StatelessWidget {
   Widget _input(BuildContext context) {
     switch (question.type) {
       case 'single_choice':
-        return question.catalogId != null ? _listPicker(context) : _radios();
+        return question.usesSelect(options.length) ? _listPicker(context) : _radios();
       case 'multiple_choice':
-        return _checkboxes();
+        return question.usesSelect(options.length) ? _multiPicker(context) : _checkboxes();
       case 'date':
         return _dateButton(context);
       case 'time':
@@ -369,7 +369,21 @@ class _QuestionField extends StatelessWidget {
     }
   }
 
+  /// Said instead of an empty list of options; null when there are options.
+  String? get _noOptionsText {
+    if (options.isNotEmpty) {
+      return null;
+    }
+
+    return question.filterBy != null ? 'Responde primero la pregunta anterior' : 'Sin opciones disponibles';
+  }
+
   Widget _radios() {
+    final empty = _noOptionsText;
+    if (empty != null) {
+      return Text(empty);
+    }
+
     return RadioGroup<String>(
       groupValue: value is String ? value as String : null,
       onChanged: onChanged,
@@ -389,9 +403,10 @@ class _QuestionField extends StatelessWidget {
 
   Widget _checkboxes() {
     final selected = value is List ? [...value as List] : <Object?>[];
+    final empty = _noOptionsText;
 
-    if (options.isEmpty) {
-      return const Text('Sin opciones disponibles.');
+    if (empty != null) {
+      return Text(empty);
     }
 
     return Column(
@@ -427,13 +442,13 @@ class _QuestionField extends StatelessWidget {
       onPressed: options.isEmpty
           ? null
           : () async {
-              final picked = await showModalBottomSheet<String>(
+              final picked = await showModalBottomSheet<Object>(
                 context: context,
                 isScrollControlled: true,
                 useSafeArea: true,
                 builder: (_) => _OptionSheet(title: question.label, options: options),
               );
-              if (picked != null) {
+              if (picked is String) {
                 onChanged(picked);
               }
             },
@@ -444,6 +459,41 @@ class _QuestionField extends StatelessWidget {
                 : options.isEmpty
                 ? 'Sin opciones disponibles'
                 : 'Elegir'),
+      ),
+    );
+  }
+
+  /// Several answers out of a long list: a searchable sheet with checkboxes.
+  Widget _multiPicker(BuildContext context) {
+    final selected = value is List ? [...value as List] : <Object?>[];
+    final labels = [
+      for (final option in options)
+        if (selected.contains(option.value)) option.label,
+    ];
+
+    return OutlinedButton(
+      key: Key('pick-${question.key}'),
+      style: OutlinedButton.styleFrom(
+        alignment: Alignment.centerLeft,
+        minimumSize: const Size.fromHeight(48),
+      ),
+      onPressed: options.isEmpty
+          ? null
+          : () async {
+              final picked = await showModalBottomSheet<Object>(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => _OptionSheet(title: question.label, options: options, selected: selected),
+              );
+              if (picked is List) {
+                onChanged(picked.isEmpty ? null : picked);
+              }
+            },
+      child: Text(
+        labels.isEmpty ? (_noOptionsText ?? 'Elegir') : labels.join(', '),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -515,10 +565,13 @@ class _QuestionField extends StatelessWidget {
 }
 
 class _OptionSheet extends StatefulWidget {
-  const _OptionSheet({required this.title, required this.options});
+  const _OptionSheet({required this.title, required this.options, this.selected});
 
   final String title;
   final List<Option> options;
+
+  /// Set when several can be chosen: what is already chosen. Null for a single answer.
+  final List<Object?>? selected;
 
   @override
   State<_OptionSheet> createState() => _OptionSheetState();
@@ -526,6 +579,7 @@ class _OptionSheet extends StatefulWidget {
 
 class _OptionSheetState extends State<_OptionSheet> {
   String _term = '';
+  late final List<Object?> _chosen = [...?widget.selected];
 
   /// Lowercase and without accents, so "bogota" finds "Bogotá".
   static String _fold(String text) {
@@ -568,12 +622,38 @@ class _OptionSheetState extends State<_OptionSheet> {
           Expanded(
             child: ListView.builder(
               itemCount: matches.length,
-              itemBuilder: (context, index) => ListTile(
-                title: Text(matches[index].label),
-                onTap: () => Navigator.pop(context, matches[index].value),
-              ),
+              itemBuilder: (context, index) {
+                final option = matches[index];
+
+                if (widget.selected == null) {
+                  return ListTile(
+                    title: Text(option.label),
+                    onTap: () => Navigator.pop(context, option.value),
+                  );
+                }
+
+                return CheckboxListTile(
+                  title: Text(option.label),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: _chosen.contains(option.value),
+                  onChanged: (checked) => setState(() {
+                    checked == true ? _chosen.add(option.value) : _chosen.remove(option.value);
+                  }),
+                );
+              },
             ),
           ),
+          if (widget.selected != null)
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: FilledButton(
+                  key: const Key('option-done'),
+                  onPressed: () => Navigator.pop(context, _chosen),
+                  child: Text(_chosen.isEmpty ? 'Listo' : 'Listo (${_chosen.length})'),
+                ),
+              ),
+            ),
         ],
       ),
     );
