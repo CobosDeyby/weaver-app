@@ -35,6 +35,7 @@ final sampleDefinition = <String, dynamic>{
           'key': 'depto',
           'type': 'single_choice',
           'label': 'Departamento',
+          'display': 'select',
           'remember': true,
           'source': {'catalog': 1},
         },

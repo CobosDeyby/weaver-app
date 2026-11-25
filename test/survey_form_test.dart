@@ -57,7 +57,7 @@ void main() {
     await tester.pump(Duration.zero);
   }
 
-  Future<void> openForm(WidgetTester tester) async {
+  Future<void> openForm(WidgetTester tester, {Map<String, dynamic>? definition}) async {
     tester.view.physicalSize = const Size(1080, 4000);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
@@ -68,7 +68,7 @@ void main() {
       organization: 'Demo',
       version: 3,
       hash: 'h1',
-      definition: jsonEncode(sampleDefinition),
+      definition: jsonEncode(definition ?? sampleDefinition),
     );
 
     await tester.pumpWidget(
@@ -250,5 +250,94 @@ void main() {
     expect(find.text('Llevas 2 hoy · todo enviado'), findsOneWidget);
     expect(all.map((response) => jsonDecode(response.answers)['muni']), everyElement('med'));
     await leave(tester);
+  });
+
+  group('how a choice shows its options', () {
+    List<Map<String, String>> options(int count) => [
+      for (var i = 1; i <= count; i++) {'value': 'o$i', 'label': 'Opción $i'},
+    ];
+
+    Map<String, dynamic> survey(List<Map<String, dynamic>> questions) => {
+      'schemaVersion': 2,
+      'title': 'Prueba',
+      'settings': {'requireLocation': false, 'minDurationSeconds': 0},
+      'sections': [
+        {'key': 's1', 'title': 'Uno', 'questions': questions},
+      ],
+    };
+
+    testWidgets('a few options are open and many open a sheet, unless the survey says otherwise', (
+      tester,
+    ) async {
+      await openForm(
+        tester,
+        definition: survey([
+          {'key': 'pocas', 'type': 'single_choice', 'label': 'Pocas', 'options': options(3)},
+          {'key': 'muchas', 'type': 'single_choice', 'label': 'Muchas', 'options': options(8)},
+          {
+            'key': 'forzada',
+            'type': 'single_choice',
+            'label': 'Forzada',
+            'options': options(3),
+            'display': 'select',
+          },
+          {
+            'key': 'abierta',
+            'type': 'single_choice',
+            'label': 'Abierta',
+            'options': options(8),
+            'display': 'list',
+          },
+        ]),
+      );
+
+      expect(find.byKey(const Key('pick-pocas')), findsNothing);
+      expect(find.byKey(const Key('pick-muchas')), findsOneWidget);
+      expect(find.byKey(const Key('pick-forzada')), findsOneWidget);
+      expect(find.byKey(const Key('pick-abierta')), findsNothing);
+      // 3 open options of the first question + 8 of the last.
+      expect(find.byType(RadioListTile<String>), findsNWidgets(11));
+
+      await tester.tap(find.byKey(const Key('pick-muchas')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Opción 5')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(of: find.byKey(const Key('pick-muchas')), matching: find.text('Opción 5')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('several answers out of a long list are chosen in a searchable sheet', (tester) async {
+      await openForm(
+        tester,
+        definition: survey([
+          {'key': 'idiomas', 'type': 'multiple_choice', 'label': 'Idiomas', 'options': options(9)},
+        ]),
+      );
+
+      await tester.tap(find.byKey(const Key('pick-idiomas')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Opción 2')));
+      await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Opción 7')));
+      await tester.pumpAndSettle();
+      expect(find.text('Listo (2)'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('option-done')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(of: find.byKey(const Key('pick-idiomas')), matching: find.text('Opción 2, Opción 7')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('save')));
+      await tester.pumpAndSettle();
+
+      final stored = jsonDecode((await db.select(db.responses).getSingle()).answers) as Map<String, dynamic>;
+      expect(stored['idiomas'], ['o2', 'o7']);
+      await leave(tester);
+    });
   });
 }

@@ -128,4 +128,28 @@ void main() {
       expect(answersToStore(withRequiredSignature, {'autoriza': 'no', 'firma': signed}), {'autoriza': 'no'});
     });
   });
+
+  group('display of a choice', () {
+    Question choice([Map<String, dynamic> extra = const {}]) =>
+        Question({'key': 'q', 'type': 'single_choice', 'label': 'Q', ...extra});
+
+    test('without an explicit choice, up to six options are open', () {
+      expect(choice().usesSelect(6), isFalse);
+      expect(choice().usesSelect(7), isTrue);
+    });
+
+    test('the survey can force either way', () {
+      expect(choice({'display': 'select'}).usesSelect(2), isTrue);
+      expect(choice({'display': 'list'}).usesSelect(40), isFalse);
+    });
+
+    test('a list that depends on another question always opens a sheet', () {
+      final dependent = choice({
+        'source': {'catalog': 2, 'filterBy': 'depto'},
+      });
+
+      expect(dependent.usesSelect(0), isTrue);
+      expect(dependent.usesSelect(3), isTrue);
+    });
+  });
 }
